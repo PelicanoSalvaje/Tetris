@@ -2,7 +2,6 @@ package game;
 
 import java.awt.*;
 import java.awt.image.BufferStrategy;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -16,7 +15,7 @@ public class Game extends Canvas implements Runnable{
 	public static final int SCALE = 2;
 	public final String TITLE = "Tetris";
 	
-	private BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+	//private BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
 	//private int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 	
 	private boolean running = false;
@@ -24,6 +23,8 @@ public class Game extends Canvas implements Runnable{
 	private int shapeKind;
 	private Random rand = new Random();
 	private Color[] shapeColor = new Color[100];
+	
+	private ArrayList<Integer> cordsUsed = new ArrayList<Integer>();
 	
 	private InputHandler input = new InputHandler(this);
 	
@@ -34,6 +35,7 @@ public class Game extends Canvas implements Runnable{
 	private int actualTicks = 30;
 	
 	ArrayList<Shape> shapes = new ArrayList<Shape>();
+	ArrayList<Integer> kinds = new ArrayList<Integer>();
 	
 	private void setColor() {
 		shapeColor[actualShape] = new Color(rand.nextInt(256),rand.nextInt(256),rand.nextInt(256));
@@ -46,6 +48,7 @@ public class Game extends Canvas implements Runnable{
 		
 		running = true;
 		new Thread(this).start();
+		this.addShape();
 		
 	}
 	
@@ -97,29 +100,37 @@ public class Game extends Canvas implements Runnable{
 	
 	private void tick() {
 		
-		if (shapes.size() <1) {
-			addShape();
-			shapeKind = rand.nextInt(7);
-			System.out.println(shapeKind);
-			this.setColor();
-			System.out.println("Añadida");
-		}
-		
 		if (tickCounter > 60) {
 			
-			shapes.get(actualShape).moveShape(shapeKind);
+			shapes.get(actualShape).moveShape(kinds.get(actualShape));
 			tickCounter = 0;
 		}
 		
 		
-		if (actualTicks > ticksForMove) {
-			if (input.left.isPressed()) {
-				shapes.get(actualShape).moveShapeLeft(shapeKind);
-				actualTicks = 0;
-			}else if (input.right.isPressed()) {
-				shapes.get(actualShape).moveShapeRight(shapeKind);
-				actualTicks = 0;
+		
+		// CHECK COLLISION
+		
+		for (int i = 0; i < shapes.size(); i++) {
+			for (int j = 0; j < 4; j++) {
+				
+				if (actualTicks > ticksForMove) {
+					if (input.left.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) >= 250) {
+						shapes.get(actualShape).moveShapeLeft(kinds.get(actualShape));
+						actualTicks = 0;
+					}else if (input.right.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) <= 375) {
+						shapes.get(actualShape).moveShapeRight(kinds.get(actualShape));
+						actualTicks = 0;
+					}
+					
+				}
+				
+				if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
+					shapes.get(actualShape).landed();
+					actualShape++;
+					this.addShape();
+				}
 			}
+			
 			
 		}
 		
@@ -130,6 +141,10 @@ public class Game extends Canvas implements Runnable{
 	
 	private void addShape() {
 		this.shapes.add(new Shape(325, 25,cellSize));
+		shapeKind = rand.nextInt(7);
+		this.kinds.add(shapeKind);
+		System.out.println(shapeKind);
+		this.setColor();
 	}
 	
 	public void render() {
@@ -150,8 +165,8 @@ public class Game extends Canvas implements Runnable{
 		if (shapes.size() > 0) {
 			for (int j = 0; j < shapes.size(); j++) {
 				for (int i = 0; i < 4; i++) {
-					g.setColor(shapeColor[actualShape]);
-					g.fillRect(shapes.get(actualShape).getCords(shapeKind, i, 0), shapes.get(actualShape).getCords(shapeKind, i, 1), cellSize, cellSize);
+					g.setColor(shapeColor[j]);
+					g.fillRect(shapes.get(j).getCords(kinds.get(j), i, 0), shapes.get(j).getCords(kinds.get(j), i, 1), cellSize, cellSize);
 				}
 			}
 			

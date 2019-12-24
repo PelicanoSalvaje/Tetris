@@ -60,6 +60,10 @@ public class Shape {
 		}
 	}
 	
+	public void landed() {
+		this.landed = true;
+	}
+	
 	public int getCords(int a, int b, int c){
 		return cords[a][b][c];
 	}
