@@ -31,7 +31,7 @@ public class Game extends Canvas implements Runnable{
 	private final int rows = 20, cols = 10;
 	private final int cellSize = 25;
 	private int tickCounter = 0;
-	private int ticksForMove = 30;
+	private int ticksForMove = 30, ticksForMoveDown = 10;
 	private int actualTicks = 30;
 	
 	ArrayList<Shape> shapes = new ArrayList<Shape>();
@@ -41,6 +41,13 @@ public class Game extends Canvas implements Runnable{
 		shapeColor[actualShape] = new Color(rand.nextInt(256),rand.nextInt(256),rand.nextInt(256));
 	}
 	
+	/**
+	 * START method is called once the game starts
+	 * It set running variable to true so the RUN method can start running the game
+	 * 
+	 * This method open a new thread
+	 * and add the frist shape
+	 */
 	private synchronized void start() {
 		if(running) {
 			return;
@@ -52,6 +59,10 @@ public class Game extends Canvas implements Runnable{
 		
 	}
 	
+	/**
+	 * STOP method is called once the RUN method ends
+	 * It kills the program
+	 */
 	private synchronized void stop() {
 		if (!running) {
 			return;
@@ -63,6 +74,12 @@ public class Game extends Canvas implements Runnable{
 		
 	}
 	
+	/**
+	 * RUN Method is called when the game starts
+	 * Basically it is the game engine
+	 * It set the tick-rate and shows the frames per second
+	 * 
+	 */
 	public void run() {
 		
 		long lastTime = System.nanoTime();
@@ -98,6 +115,12 @@ public class Game extends Canvas implements Runnable{
 		stop();
 	}
 	
+	/**
+	 * This method is called every tick of the game
+	 * 
+	 * Here is where all mechanics and comprobations of the game are made
+	 * 
+	 */
 	private void tick() {
 		
 		if (tickCounter > 60) {
@@ -108,28 +131,61 @@ public class Game extends Canvas implements Runnable{
 		
 		
 		
-		// CHECK COLLISION
+		// CHECK COLLISION//
 		
-		for (int i = 0; i < shapes.size(); i++) {
-			for (int j = 0; j < 4; j++) {
+	
+		for (int j = 0; j < 4; j++) {
+			
+			// MOVE DOWN FASTER
+			if (actualTicks > ticksForMoveDown) {
+				if (input.down.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) <= 500) {
+					shapes.get(actualShape).moveShape(kinds.get(actualShape));
+					actualTicks=0;
+				}
+			}
+			
+			// LANDING
+			
+			if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
+				shapes.get(actualShape).landed();
+				actualShape++;
+				this.addShape();
+			}
+			
+			if (shapes.size() > 1) {
 				
-				if (actualTicks > ticksForMove) {
-					if (input.left.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) >= 250) {
-						shapes.get(actualShape).moveShapeLeft(kinds.get(actualShape));
-						actualTicks = 0;
-					}else if (input.right.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) <= 375) {
-						shapes.get(actualShape).moveShapeRight(kinds.get(actualShape));
-						actualTicks = 0;
+				for (int i = 0; i < shapes.size() - 1; i++) {
+					for (int x = 0; x < 4; x++){
+						if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
+							shapes.get(actualShape).landed();
+							actualShape++;
+							this.addShape();
+						}
 					}
+					
 					
 				}
 				
-				if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
-					shapes.get(actualShape).landed();
-					actualShape++;
-					this.addShape();
+			}
+			
+		
+			
+			// CAN MOVE MORE?
+			
+			if (actualTicks > ticksForMove) {
+				if (input.left.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), 2, 0) >= 225) {
+					shapes.get(actualShape).moveShapeLeft(kinds.get(actualShape));
+					System.out.println("La posicion del array: " + j + "se puede mover hacia izquierda.");
+					actualTicks = 0;
+					
+				}else if (input.right.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), 1, 0) <= 400) {
+					shapes.get(actualShape).moveShapeRight(kinds.get(actualShape));
+					System.out.println("La posicion del array: " + j + "se puede mover hacia derecha.");
+					actualTicks = 0;
 				}
 			}
+			
+		
 			
 			
 		}
@@ -139,13 +195,12 @@ public class Game extends Canvas implements Runnable{
 		
 	}
 	
-	private void addShape() {
-		this.shapes.add(new Shape(325, 25,cellSize));
-		shapeKind = rand.nextInt(7);
-		this.kinds.add(shapeKind);
-		System.out.println(shapeKind);
-		this.setColor();
-	}
+	/**
+	 * RENDER method is the entrusted of graphics
+	 * 
+	 * All painting of the game are made here
+	 * 
+	 */
 	
 	public void render() {
 		
@@ -158,9 +213,13 @@ public class Game extends Canvas implements Runnable{
 		
 		Graphics g = bs.getDrawGraphics();
 		
+		// SET BACKGROUND TO DARK
+		
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, getWidth(), getHeight());
 	
+		
+		// DRAW EVERY SHAPE
 		
 		if (shapes.size() > 0) {
 			for (int j = 0; j < shapes.size(); j++) {
@@ -174,7 +233,7 @@ public class Game extends Canvas implements Runnable{
 		
 		// DRAW GRID //
 		
-		g.setColor(Color.white);
+		g.setColor(Color.DARK_GRAY);
 		
 		// DRAW ROWS
 		for (int i = 1; i <= rows + 1; i++) {
@@ -192,6 +251,27 @@ public class Game extends Canvas implements Runnable{
 		bs.show();
 	}
 	
+	/**
+	 * ADDSHAPE METHOD
+	 * This method add a new Shape when its called
+	 * 
+	 */
+	
+	private void addShape() {
+		this.shapes.add(new Shape(325, 25,cellSize));
+		shapeKind = rand.nextInt(7);
+		this.kinds.add(shapeKind);
+		System.out.println(shapeKind);
+		this.setColor();
+	}
+	
+	/**
+	 * MAIN METHOD
+	 * 
+	 * It set up all elements of JFrame 
+	 * and calls the start method
+	 * 
+	 */
 	public static void main(String[] args) {
 
 		Game game = new Game();
