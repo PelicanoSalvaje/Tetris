@@ -7,6 +7,12 @@ import java.util.Random;
 
 import javax.swing.JFrame;
 
+/**
+ * 
+ * @author Sergio
+ *
+ */
+
 public class Game extends Canvas implements Runnable{
 
 	private static final long serialVersionUID = 1L;
@@ -19,12 +25,11 @@ public class Game extends Canvas implements Runnable{
 	//private int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 	
 	private boolean running = false;
-	private int actualShape = 0;
+	private int actualShape = -1;
 	private int shapeKind;
 	private Random rand = new Random();
 	private Color[] shapeColor = new Color[100];
-	
-	private ArrayList<Integer> cordsUsed = new ArrayList<Integer>();
+	private boolean landFast = false;
 	
 	private InputHandler input = new InputHandler(this);
 	
@@ -122,77 +127,115 @@ public class Game extends Canvas implements Runnable{
 	 * 
 	 */
 	private void tick() {
+	
 		
+		try {
+			this.checkMovement();
+			this.checkLanding();
+		}catch (ArrayIndexOutOfBoundsException e) {
+			running = false;
+			System.out.println("HAS PERDIDO BRO");
+			stop();
+		}
+		
+		
+		
+		tickCounter++;
+		actualTicks++;
+		
+	}
+	
+	/**
+	 *  PRIVATE METHOD THAT IS EXECUTED EVERY TICK OF THE GAME
+	 *  
+	 *  IT HANDLES ALL MOVEMENT ACTIONS
+	 *  - SHAPE MOVING DOWN CONSTANTLY
+	 *  - MOVE SHAPE FAST DOWN 
+	 *  - MOVE SHAPE LEFT AND RIGHT AND CHECK COLLISIONS
+	 *  - MOVE SHAPE DOWN FASTLY IF DOWN GETS PRESSED
+	 *  
+	 */
+	
+	private void checkMovement() {
+		// MOVE CONSTANTLY DOWN
 		if (tickCounter > 60) {
 			
 			shapes.get(actualShape).moveShape(kinds.get(actualShape));
 			tickCounter = 0;
 		}
 		
+		// MOVE THE PIECE DOWN FASTER UNTIL IT LANDS IF LANDFAST IS TRUE
 		
-		
-		// CHECK COLLISION//
-		
-	
-		for (int j = 0; j < 4; j++) {
-			
-			// MOVE DOWN FASTER
-			if (actualTicks > ticksForMoveDown) {
-				if (input.down.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) <= 500) {
-					shapes.get(actualShape).moveShape(kinds.get(actualShape));
-					actualTicks=0;
-				}
+		if (actualTicks > 5) {
+			if (landFast) {
+				shapes.get(actualShape).moveShape(kinds.get(actualShape));
+				actualTicks = 0;
 			}
 			
-			// LANDING
-			
-			if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
-				shapes.get(actualShape).landed();
-				actualShape++;
-				this.addShape();
-			}
-			
-			if (shapes.size() > 1) {
-				
-				for (int i = 0; i < shapes.size() - 1; i++) {
-					for (int x = 0; x < 4; x++){
-						if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
-							shapes.get(actualShape).landed();
-							actualShape++;
-							this.addShape();
-						}
-					}
-					
-					
-				}
-				
-			}
-			
+		}
 		
-			
-			// CAN MOVE MORE?
-			
+		// MOVE SHAPE LEFT AND RIGHT AND CHECK COLLISIONS
+		
 			if (actualTicks > ticksForMove) {
 				if (input.left.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), 2, 0) >= 225) {
 					shapes.get(actualShape).moveShapeLeft(kinds.get(actualShape));
-					System.out.println("La posicion del array: " + j + "se puede mover hacia izquierda.");
 					actualTicks = 0;
 					
 				}else if (input.right.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), 1, 0) <= 400) {
 					shapes.get(actualShape).moveShapeRight(kinds.get(actualShape));
-					System.out.println("La posicion del array: " + j + "se puede mover hacia derecha.");
+					actualTicks = 0;
+				}
+				
+				if (input.up.isPressed()) {
+					shapes.get(actualShape).setRotation();
+					actualTicks = 0;
+				}
+				
+				// IF SPACE IS PRESSED IT SET LANDFAST TO TRUE
+				if (input.space.isPressed()) {
+					landFast = true;
 					actualTicks = 0;
 				}
 			}
 			
-		
-			
-			
-		}
-		
-		tickCounter++;
-		actualTicks++;
-		
+			// MOVE DOWN FASTER
+			if (actualTicks > ticksForMoveDown) {
+				if (input.down.isPressed()) {
+					shapes.get(actualShape).moveShape(kinds.get(actualShape));
+					actualTicks=0;
+				}
+			}
+	
+	}
+	
+	/**
+	 * PRIVATE METHOD THAT CHECK ALL POSIBLE LANDINGS
+	 * 
+	 */
+	
+	private void checkLanding() {
+		for (int j = 0; j < 4; j++) {
+					
+					// LAND IF TOUCH GROUND
+					
+					if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
+						shapes.get(actualShape).landed();
+						this.addShape();
+					}
+					
+					// LAND IF TOUCH OTHER SHAPE
+					if (shapes.size() > 1) {
+						
+						for (int i = 0; i < shapes.size() - 1; i++) {
+							for (int x = 0; x < 4; x++){
+								if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
+									shapes.get(actualShape).landed();
+									this.addShape();
+								}
+							}
+						}
+					}
+				}
 	}
 	
 	/**
@@ -258,11 +301,12 @@ public class Game extends Canvas implements Runnable{
 	 */
 	
 	private void addShape() {
-		this.shapes.add(new Shape(325, 25,cellSize));
+		this.shapes.add(new Shape(300, 50,cellSize));
 		shapeKind = rand.nextInt(7);
 		this.kinds.add(shapeKind);
-		System.out.println(shapeKind);
+		actualShape++;
 		this.setColor();
+		landFast = false;
 	}
 	
 	/**
