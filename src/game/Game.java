@@ -31,6 +31,7 @@ public class Game extends Canvas implements Runnable{
 	private Color[] shapeColor = new Color[100];
 	private boolean landFast = false;
 	
+	private int lines = 0;
 	private InputHandler input = new InputHandler(this);
 	
 	private final int rows = 20, cols = 10;
@@ -132,6 +133,7 @@ public class Game extends Canvas implements Runnable{
 		try {
 			this.checkMovement();
 			this.checkLanding();
+			
 		}catch (ArrayIndexOutOfBoundsException e) {
 			running = false;
 			System.out.println("HAS PERDIDO BRO");
@@ -144,6 +146,66 @@ public class Game extends Canvas implements Runnable{
 		actualTicks++;
 		
 	}
+	
+	/**
+	 * CHECK IF THERE IS A LINE
+	 * 
+	 * It uses recursivity to switch if it have to check if there is a line and in the second run if there is a line it removes it
+	 * @param starx The x coordinate that the algorithm have to start
+	 * @param stary The y coordinate that the algorithm have to start
+	 * @param cont  The counter, In the first run i pass a 0, in the second run i pass the current value, if it is 10 it deletes the block of that line
+	 * @param type  If the type is 0 it just check if there is a line and call again the method passing 1.
+	 * 
+	 */
+	
+	private void checkLine(int starx, int stary, int cont, int type) {
+		
+		int startX = starx;
+		int startY = stary;
+		
+		int contador = cont;
+		
+		if (shapes.size() > 0) {
+		// Recorrer cada fila y columna{
+			for(int i = 1; i <= rows; i++) {
+				for(int j = 1; j <= cols; j++) {
+					
+					// Recorrer cada ficha
+					for (int s = 0; s < shapes.size(); s++) {
+						for (int x = 0; x < 4; x++) {
+							
+							if (type == 0) {
+								if (startX == shapes.get(s).getCords(kinds.get(s), x, 0) && startY == shapes.get(s).getCords(kinds.get(s), x, 1)) {
+									contador++;
+								}
+							}else if (type == 1) {
+								if (startX == shapes.get(s).getCords(kinds.get(s), x, 0) && startY == shapes.get(s).getCords(kinds.get(s), x, 1)) {
+									if (contador == 10) {
+										shapes.get(s).deleteBlock(kinds.get(s), x);
+										lines += 1;
+										
+									}
+								}
+							}
+										
+						}
+					}
+					startX += cellSize;
+				}
+				if (type == 0) {
+					this.checkLine(200, startY, contador, 1);
+					startX = 200;
+					startY += cellSize;
+					contador = 0;
+					
+				}
+			}
+			
+		}
+		
+	}
+			
+		
 	
 	/**
 	 *  PRIVATE METHOD THAT IS EXECUTED EVERY TICK OF THE GAME
@@ -216,26 +278,28 @@ public class Game extends Canvas implements Runnable{
 	private void checkLanding() {
 		for (int j = 0; j < 4; j++) {
 					
-					// LAND IF TOUCH GROUND
-					
-					if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
-						shapes.get(actualShape).landed();
-						this.addShape();
-					}
-					
-					// LAND IF TOUCH OTHER SHAPE
-					if (shapes.size() > 1) {
-						
-						for (int i = 0; i < shapes.size() - 1; i++) {
-							for (int x = 0; x < 4; x++){
-								if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
-									shapes.get(actualShape).landed();
-									this.addShape();
-								}
-							}
+			// LAND IF TOUCH GROUND
+			
+			if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
+				shapes.get(actualShape).landed();
+				this.addShape();
+				this.checkLine(200, 200, 0, 0);
+			}
+			
+			// LAND IF TOUCH OTHER SHAPE
+			if (shapes.size() > 1) {
+				
+				for (int i = 0; i < shapes.size() - 1; i++) {
+					for (int x = 0; x < 4; x++){
+						if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
+							shapes.get(actualShape).landed();
+							this.addShape();
+							this.checkLine(200, 200, 0, 0);
 						}
 					}
 				}
+			}
+		}
 	}
 	
 	/**
@@ -261,6 +325,11 @@ public class Game extends Canvas implements Runnable{
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, getWidth(), getHeight());
 	
+		System.out.println(lines);
+		g.setColor(Color.WHITE);
+		g.setFont(new Font("Calibri",Font.BOLD, 30));
+		g.drawString("Líneas: ", 600, 50);
+		g.drawString(Integer.toString(lines / 10), 700 , 50);
 		
 		// DRAW EVERY SHAPE
 		

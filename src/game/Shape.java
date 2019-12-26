@@ -102,6 +102,12 @@ public class Shape {
 		
 	}
 	
+	public void deleteBlock(int a, int b) {
+		
+		this.cords[a][this.rotation][b][0] = 2000;
+		this.cords[a][this.rotation][b][1] = 2000;
+	}
+	
 	public int getRotation() {
 		return this.rotation;
 	}
@@ -134,6 +140,8 @@ public class Shape {
 			}
 			
 		}
+		
+		
 		
 	}
 	
