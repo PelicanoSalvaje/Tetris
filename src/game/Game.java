@@ -37,7 +37,7 @@ public class Game extends Canvas implements Runnable{
 	private final int rows = 20, cols = 10;
 	private final int cellSize = 25;
 	private int tickCounter = 0;
-	private int ticksForMove = 30, ticksForMoveDown = 10;
+	private int ticksForMove = 20, ticksForMoveDown = 10;
 	private int actualTicks = 30;
 	
 	ArrayList<Shape> shapes = new ArrayList<Shape>();
@@ -147,23 +147,65 @@ public class Game extends Canvas implements Runnable{
 		
 	}
 	
+	
+	/**
+	 * DELETE THE SPECIFIED LINE
+	 * MOVE DOWN THE UPPER LINES
+	 * @param starty The y position of the line that have to remove
+	 */
+	private void deleteLine(int starty) {
+		int y = starty;
+		int x = 200;
+		int counter = 0;
+		
+		// DELETE THE LINE OF BLOCKS
+		// MOVE THE UPPER BLOCKS DOWN
+		for (; y >= 200; y -= cellSize) {
+			for (; x <= 425; x += cellSize) {
+				
+				
+				for (int s = 0; s < shapes.size(); s++) {
+					for (int j = 0; j < 4; j++) {
+						if (x == shapes.get(s).getCords(kinds.get(s), j, 0) && y == shapes.get(s).getCords(kinds.get(s), j, 1)) {
+							if (counter < 10) {
+								shapes.get(s).deleteBlock(kinds.get(s), j);
+								counter++;
+							}else if (counter >= 10){
+								shapes.get(s).moveBlockDown(kinds.get(s), j);
+							}
+						}
+					}
+				}
+				
+			}
+			
+			x = 200;
+			
+		}
+			
+		lines += 1;					
+			
+		
+		
+		
+		
+		
+		
+	}
+	
 	/**
 	 * CHECK IF THERE IS A LINE
-	 * 
-	 * It uses recursivity to switch if it have to check if there is a line and in the second run if there is a line it removes it
-	 * @param starx The x coordinate that the algorithm have to start
-	 * @param stary The y coordinate that the algorithm have to start
-	 * @param cont  The counter, In the first run i pass a 0, in the second run i pass the current value, if it is 10 it deletes the block of that line
-	 * @param type  If the type is 0 it just check if there is a line and call again the method passing 1.
-	 * 
+	 *
+	 * GOES THROUGH ALL ROWS AND COLS AND CHECK EVERY BLOCK OF EVERY SHAPE AND COUNT IT
+	 * IF IT IS TEN IT CALL A FUNCTION TO DELETE LINE 
 	 */
 	
-	private void checkLine(int starx, int stary, int cont, int type) {
+	private void checkLine() {
 		
-		int startX = starx;
-		int startY = stary;
+		int startX = 200;
+		int startY = 200;
 		
-		int contador = cont;
+		int contador = 0;
 		
 		if (shapes.size() > 0) {
 		// Recorrer cada fila y columna{
@@ -173,32 +215,21 @@ public class Game extends Canvas implements Runnable{
 					// Recorrer cada ficha
 					for (int s = 0; s < shapes.size(); s++) {
 						for (int x = 0; x < 4; x++) {
-							
-							if (type == 0) {
-								if (startX == shapes.get(s).getCords(kinds.get(s), x, 0) && startY == shapes.get(s).getCords(kinds.get(s), x, 1)) {
-									contador++;
-								}
-							}else if (type == 1) {
-								if (startX == shapes.get(s).getCords(kinds.get(s), x, 0) && startY == shapes.get(s).getCords(kinds.get(s), x, 1)) {
-									if (contador == 10) {
-										shapes.get(s).deleteBlock(kinds.get(s), x);
-										lines += 1;
-										
-									}
-								}
-							}
-										
+							if (startX == shapes.get(s).getCords(kinds.get(s), x, 0) && startY == shapes.get(s).getCords(kinds.get(s), x, 1))
+								contador++;		
 						}
 					}
 					startX += cellSize;
 				}
-				if (type == 0) {
-					this.checkLine(200, startY, contador, 1);
-					startX = 200;
-					startY += cellSize;
-					contador = 0;
-					
+				
+				if (contador == 10) {
+					this.deleteLine(startY);
 				}
+					
+				startX = 200;
+				startY += cellSize;
+				contador = 0;
+				
 			}
 			
 		}
@@ -228,7 +259,7 @@ public class Game extends Canvas implements Runnable{
 		
 		// MOVE THE PIECE DOWN FASTER UNTIL IT LANDS IF LANDFAST IS TRUE
 		
-		if (actualTicks > 5) {
+		if (actualTicks > 1) {
 			if (landFast) {
 				shapes.get(actualShape).moveShape(kinds.get(actualShape));
 				actualTicks = 0;
@@ -248,7 +279,7 @@ public class Game extends Canvas implements Runnable{
 					actualTicks = 0;
 				}
 				
-				if (input.up.isPressed()) {
+				if (input.up.isPressed() && shapes.get(actualShape).getCords(kinds.get(actualShape), 1, 0) <= 400 && shapes.get(actualShape).getCords(kinds.get(actualShape), 2, 0) >= 225) {
 					shapes.get(actualShape).setRotation();
 					actualTicks = 0;
 				}
@@ -283,7 +314,7 @@ public class Game extends Canvas implements Runnable{
 			if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) >= 500) {
 				shapes.get(actualShape).landed();
 				this.addShape();
-				this.checkLine(200, 200, 0, 0);
+				this.checkLine();
 			}
 			
 			// LAND IF TOUCH OTHER SHAPE
@@ -294,7 +325,7 @@ public class Game extends Canvas implements Runnable{
 						if (shapes.get(actualShape).getCords(kinds.get(actualShape), j, 1) == shapes.get(i).getCords(kinds.get(i), x, 1) - cellSize && shapes.get(actualShape).getCords(kinds.get(actualShape), j, 0) == shapes.get(i).getCords(kinds.get(i), x, 0)) {
 							shapes.get(actualShape).landed();
 							this.addShape();
-							this.checkLine(200, 200, 0, 0);
+							this.checkLine();
 						}
 					}
 				}
@@ -325,11 +356,10 @@ public class Game extends Canvas implements Runnable{
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, getWidth(), getHeight());
 	
-		System.out.println(lines);
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Calibri",Font.BOLD, 30));
 		g.drawString("Líneas: ", 600, 50);
-		g.drawString(Integer.toString(lines / 10), 700 , 50);
+		g.drawString(Integer.toString(lines), 700 , 50);
 		
 		// DRAW EVERY SHAPE
 		

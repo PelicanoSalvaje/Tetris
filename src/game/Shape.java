@@ -62,7 +62,7 @@ public class Shape {
 				// ISHAPE
 				{
 					{{startx,starty},{startx, starty + cellSize},{startx, starty + cellSize * 2},{startx,starty + cellSize * 3}},
-					{{startx,starty},{startx + cellSize, starty}, {startx + cellSize * 2, starty}, {startx - cellSize, starty}},
+					{{startx,starty}, {startx + cellSize * 2, starty}, {startx - cellSize, starty}, {startx + cellSize, starty}},
 					{{startx,starty},{startx, starty + cellSize},{startx, starty + cellSize * 2},{startx,starty + cellSize * 3}},
 					{{startx,starty},{startx + cellSize, starty}, {startx + cellSize * 2, starty}, {startx - cellSize, starty}},
 				},
@@ -106,6 +106,10 @@ public class Shape {
 		
 		this.cords[a][this.rotation][b][0] = 2000;
 		this.cords[a][this.rotation][b][1] = 2000;
+	}
+	
+	public void moveBlockDown(int a, int b) {
+		this.cords[a][this.rotation][b][1] += cellSize;
 	}
 	
 	public int getRotation() {
