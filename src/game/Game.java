@@ -3,9 +3,11 @@ package game;
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 /**
  * 
@@ -21,17 +23,15 @@ public class Game extends Canvas implements Runnable{
 	public static final int SCALE = 2;
 	public final String TITLE = "Tetris";
 	
-	//private BufferedImage image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
-	//private int[] pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
-	
 	private boolean running = false;
 	private int actualShape = -1;
 	private int shapeKind;
 	private Random rand = new Random();
-	private Color[] shapeColor = new Color[100];
 	private boolean landFast = false;
+	private boolean gamePaused = false;
 	
 	private int lines = 0;
+	private int score = 0;
 	private InputHandler input = new InputHandler(this);
 	
 	private final int rows = 20, cols = 10;
@@ -40,12 +40,13 @@ public class Game extends Canvas implements Runnable{
 	private int ticksForMove = 20, ticksForMoveDown = 10;
 	private int actualTicks = 30;
 	
+
+	private Color[] colors = {Color.BLUE, Color.RED, Color.GREEN, Color.MAGENTA, Color.YELLOW, Color.ORANGE, Color.CYAN};
+	private Color[] shapeColor = new Color[200];
+	
 	ArrayList<Shape> shapes = new ArrayList<Shape>();
 	ArrayList<Integer> kinds = new ArrayList<Integer>();
 	
-	private void setColor() {
-		shapeColor[actualShape] = new Color(rand.nextInt(256),rand.nextInt(256),rand.nextInt(256));
-	}
 	
 	/**
 	 * START method is called once the game starts
@@ -129,30 +130,90 @@ public class Game extends Canvas implements Runnable{
 	 */
 	private void tick() {
 	
-		
-		try {
-			this.checkMovement();
-			this.checkLanding();
+		if (!gamePaused) {
+			try {
+				this.checkMovement();
+				this.checkLanding();
+				
+			}catch (ArrayIndexOutOfBoundsException e) {
+				running = false;
+				System.out.println("HAS PERDIDO BRO");
+				stop();
+			}
 			
-		}catch (ArrayIndexOutOfBoundsException e) {
-			running = false;
-			System.out.println("HAS PERDIDO BRO");
-			stop();
+			
+			
+			tickCounter++;
+			actualTicks++;
 		}
 		
+		if (shapes.size() >= 90) {
+			restart();
+		}
 		
+	}
+	/**
+	 * WHEN PLAYER LOSE ASK FOR RESTART OR QUIT
+	 * IF RESTART IS CHOSEN IT RESTART ALL VARIABLES TO START THE GAME AGAIN
+	 */
+	private void restart() {
 		
-		tickCounter++;
-		actualTicks++;
+		this.gamePaused = true;
+		int reiniciar = JOptionPane.showOptionDialog(null,"¿ Qué deseas hacer? ", "¡ HAS PERDIDO ! ", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.INFORMATION_MESSAGE, null,new Object[] {"Reiniciar partida","Salir"}, null);
 		
+		if (reiniciar == 1) {
+			stop();
+		}else if (reiniciar == 0) {
+			
+			actualShape = -1;
+			lines = 0;
+			score = 0;
+			
+			System.out.println("Reiniciad");
+			shapeColor = new Color[shapeColor.length - 1];
+			
+			shapes.clear();
+			kinds.clear();
+			
+			gamePaused = false;
+			
+			this.addShape();
+			
+		}
+	}
+	
+	/**
+	 * Set a random color for the actual shape
+	 */
+	private void setColor() {
+		shapeColor[actualShape] = colors[rand.nextInt(colors.length)];
 	}
 	
 	
 	/**
+	 * ADDSHAPE METHOD
+	 * This method add a new Shape when its called
+	 * 
+	 */
+	
+	private void addShape() {
+		this.shapes.add(new Shape(300, 50,cellSize));
+		shapeKind = rand.nextInt(7);
+		this.kinds.add(shapeKind);
+		actualShape++;
+		this.setColor();
+		landFast = false;
+	}
+	
+	/**
 	 * DELETE THE SPECIFIED LINE
 	 * MOVE DOWN THE UPPER LINES
-	 * @param starty The y position of the line that have to remove
+	 * @param starty The y position of the line that have to remove.
+	 * 
+	 * IT ADD ONE TO THE LINES VARIABLE WHEN IT DELETES A LINE
+	 * 
 	 */
+	
 	private void deleteLine(int starty) {
 		int y = starty;
 		int x = 200;
@@ -160,10 +221,12 @@ public class Game extends Canvas implements Runnable{
 		
 		// DELETE THE LINE OF BLOCKS
 		// MOVE THE UPPER BLOCKS DOWN
+		
+		// ITERATE THROUGH ALL ROWS AND COLLS
 		for (; y >= 200; y -= cellSize) {
 			for (; x <= 425; x += cellSize) {
 				
-				
+				// ITERATE THROUGH ALL SHAPES
 				for (int s = 0; s < shapes.size(); s++) {
 					for (int j = 0; j < 4; j++) {
 						if (x == shapes.get(s).getCords(kinds.get(s), j, 0) && y == shapes.get(s).getCords(kinds.get(s), j, 1)) {
@@ -180,17 +243,11 @@ public class Game extends Canvas implements Runnable{
 			}
 			
 			x = 200;
-			
 		}
-			
-		lines += 1;					
-			
 		
 		
 		
-		
-		
-		
+		lines += 1;	
 	}
 	
 	/**
@@ -198,13 +255,15 @@ public class Game extends Canvas implements Runnable{
 	 *
 	 * GOES THROUGH ALL ROWS AND COLS AND CHECK EVERY BLOCK OF EVERY SHAPE AND COUNT IT
 	 * IF IT IS TEN IT CALL A FUNCTION TO DELETE LINE 
+	 * 
+	 * IN ORDER TO THE LINES REMOVED IT ADD THE CORRESPONDENT SCORE
 	 */
 	
 	private void checkLine() {
 		
 		int startX = 200;
 		int startY = 200;
-		
+		int points = 0;
 		int contador = 0;
 		
 		if (shapes.size() > 0) {
@@ -224,6 +283,7 @@ public class Game extends Canvas implements Runnable{
 				
 				if (contador == 10) {
 					this.deleteLine(startY);
+					points++;
 				}
 					
 				startX = 200;
@@ -232,6 +292,23 @@ public class Game extends Canvas implements Runnable{
 				
 			}
 			
+		}
+		
+		switch(points) {
+		case 1:
+			System.out.println("Añadido 40");
+			this.score += 40;
+			break;
+		case 2:
+			System.out.println("Añadido 100");
+			this.score += 100;
+			break;
+		case 3: 
+			this.score += 300;
+			break;
+		case 4:
+			this.score += 1200;
+			break;
 		}
 		
 	}
@@ -356,26 +433,46 @@ public class Game extends Canvas implements Runnable{
 		g.setColor(Color.BLACK);
 		g.fillRect(0, 0, getWidth(), getHeight());
 	
+		// DRAW VARIABLES
+			// SET FONT AND COLOR
 		g.setColor(Color.WHITE);
 		g.setFont(new Font("Calibri",Font.BOLD, 30));
-		g.drawString("Líneas: ", 600, 50);
-		g.drawString(Integer.toString(lines), 700 , 50);
+		
+	
+		// DRAW LINES
+		g.drawString("Líneas: ", 550, 50);
+		g.drawString(Integer.toString(lines), 675 , 50);
+		
+		// DRAW SCORE
+		g.drawString("Puntuación: ", 550, 80);
+		g.drawString(Integer.toString(score), 725 , 80);
 		
 		// DRAW EVERY SHAPE
-		
-		if (shapes.size() > 0) {
-			for (int j = 0; j < shapes.size(); j++) {
-				for (int i = 0; i < 4; i++) {
-					g.setColor(shapeColor[j]);
-					g.fillRect(shapes.get(j).getCords(kinds.get(j), i, 0), shapes.get(j).getCords(kinds.get(j), i, 1), cellSize, cellSize);
+		if (gamePaused == false) {
+			if (shapes.size() > 0) {
+				if (shapeColor.length > 0) {
+					for (int j = 0; j < shapes.size(); j++) {
+						for (int i = 0; i < 4; i++) {
+							g.setColor(shapeColor[j]);
+							g.fillRect(shapes.get(j).getCords(kinds.get(j), i, 0), shapes.get(j).getCords(kinds.get(j), i, 1), cellSize, cellSize);
+						}
+					}
 				}
 			}
-			
 		}
+		
 		
 		// DRAW GRID //
 		
-		g.setColor(Color.DARK_GRAY);
+		g.setColor(Color.white);
+		g.fillRect(180, 0, 20,525);
+		g.fillRect(450, 0, 20,525);
+		
+		g.fillRect(180, 525, 290,20);
+		
+		g.setColor(Color.BLACK);
+		
+		
 		
 		// DRAW ROWS
 		for (int i = 1; i <= rows + 1; i++) {
@@ -392,21 +489,7 @@ public class Game extends Canvas implements Runnable{
 		g.dispose();
 		bs.show();
 	}
-	
-	/**
-	 * ADDSHAPE METHOD
-	 * This method add a new Shape when its called
-	 * 
-	 */
-	
-	private void addShape() {
-		this.shapes.add(new Shape(300, 50,cellSize));
-		shapeKind = rand.nextInt(7);
-		this.kinds.add(shapeKind);
-		actualShape++;
-		this.setColor();
-		landFast = false;
-	}
+
 	
 	/**
 	 * MAIN METHOD

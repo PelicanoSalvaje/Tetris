@@ -75,8 +75,8 @@ public class Shape {
 				},
 				// SSHAPE
 				{
-					{{startx,starty},{startx + cellSize, starty + cellSize},{startx - cellSize, starty},{startx, starty + cellSize}},
-					{{startx,starty},{startx + cellSize, starty},{startx, starty + cellSize}, {startx + cellSize, starty - cellSize}},
+					{{startx,starty}, {startx + cellSize, starty}, {startx - cellSize, starty + cellSize}, {startx, starty + cellSize}},
+					{{startx,starty},{startx, starty + cellSize},{startx - cellSize, starty - cellSize}, {startx - cellSize, starty}},
 					{{startx,starty}, {startx + cellSize, starty}, {startx - cellSize, starty + cellSize}, {startx, starty + cellSize}},
 					{{startx,starty},{startx, starty + cellSize},{startx - cellSize, starty - cellSize}, {startx - cellSize, starty}},
 				
@@ -104,7 +104,6 @@ public class Shape {
 	
 	public void deleteBlock(int a, int b) {
 		
-		this.cords[a][this.rotation][b][0] = 2000;
 		this.cords[a][this.rotation][b][1] = 2000;
 	}
 	
