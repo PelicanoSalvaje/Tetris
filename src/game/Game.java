@@ -159,7 +159,6 @@ public class Game extends Canvas implements Runnable{
 			lines = 0;
 			score = 0;
 			
-			System.out.println("Reiniciad");
 			shapeColor = new Color[shapeColor.length - 1];
 			
 			shapes.clear();
