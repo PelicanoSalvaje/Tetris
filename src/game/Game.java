@@ -3,7 +3,6 @@ package game;
 import java.awt.*;
 import java.awt.image.BufferStrategy;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 import javax.swing.JFrame;
@@ -131,17 +130,8 @@ public class Game extends Canvas implements Runnable{
 	private void tick() {
 	
 		if (!gamePaused) {
-			try {
-				this.checkMovement();
-				this.checkLanding();
-				
-			}catch (ArrayIndexOutOfBoundsException e) {
-				running = false;
-				System.out.println("HAS PERDIDO BRO");
-				stop();
-			}
-			
-			
+			this.checkLanding();
+			this.checkMovement();
 			
 			tickCounter++;
 			actualTicks++;
@@ -245,8 +235,6 @@ public class Game extends Canvas implements Runnable{
 			x = 200;
 		}
 		
-		
-		
 		lines += 1;	
 	}
 	
@@ -296,11 +284,9 @@ public class Game extends Canvas implements Runnable{
 		
 		switch(points) {
 		case 1:
-			System.out.println("Añadido 40");
 			this.score += 40;
 			break;
 		case 2:
-			System.out.println("Añadido 100");
 			this.score += 100;
 			break;
 		case 3: 
@@ -336,7 +322,7 @@ public class Game extends Canvas implements Runnable{
 		
 		// MOVE THE PIECE DOWN FASTER UNTIL IT LANDS IF LANDFAST IS TRUE
 		
-		if (actualTicks > 1) {
+		if (actualTicks > 5) {
 			if (landFast) {
 				shapes.get(actualShape).moveShape(kinds.get(actualShape));
 				actualTicks = 0;
@@ -465,12 +451,13 @@ public class Game extends Canvas implements Runnable{
 		// DRAW GRID //
 		
 		g.setColor(Color.white);
-		g.fillRect(180, 0, 20,525);
-		g.fillRect(450, 0, 20,525);
+		g.fillRect(180, 20, 20,525);
+		g.fillRect(450, 20, 20,525);
 		
+		g.fillRect(180, 10, 290,20);
 		g.fillRect(180, 525, 290,20);
 		
-		g.setColor(Color.BLACK);
+		g.setColor(new Color(46,46,46));
 		
 		
 		
